@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import json
 import random
 import os
@@ -21,7 +21,7 @@ def save_data(data):
 
 @app.route("/")
 def home():
-    return "Welcome to the Feinbucks System!"
+    return render_template("index.html")  # Now serving a proper HTML file
 
 @app.route("/signup", methods=["POST"])
 def signup():
@@ -47,7 +47,11 @@ def login():
     if username not in data or data[username]["Password"] != password:
         return jsonify({"error": "Invalid username or password"}), 401
 
-    return jsonify({"message": "Login successful", "Feinbucks": data[username]["Feinbucks"], "Notes": data[username]["Notes"]})
+    return jsonify({
+        "message": "Login successful",
+        "Feinbucks": data[username]["Feinbucks"],
+        "Notes": data[username]["Notes"]
+    })
 
 @app.route("/balance/<username>", methods=["GET"])
 def get_balance(username):
@@ -65,7 +69,7 @@ def manage_notes(username):
 
     if request.method == "GET":
         return jsonify({"Notes": data[username]["Notes"]})
-    
+
     elif request.method == "POST":
         req = request.json
         new_notes = req.get("notes", "")
@@ -77,23 +81,3 @@ def manage_notes(username):
 def gamble(username):
     data = load_data()
     if username not in data:
-        return jsonify({"error": "User not found"}), 404
-
-    req = request.json
-    bet = float(req.get("bet", 0))
-    feinbucks = float(data[username]["Feinbucks"])
-
-    if feinbucks < bet:
-        return jsonify({"error": "Insufficient Feinbucks"}), 400
-
-    data[username]["Feinbucks"] = str(feinbucks - bet)
-    result = random.choices([0, 1.2, 1.5, 2], weights=[40, 30, 20, 10])[0]
-    winnings = bet * result
-    data[username]["Feinbucks"] = str(float(data[username]["Feinbucks"]) + winnings)
-    save_data(data)
-
-    return jsonify({"result": result, "winnings": winnings, "new_balance": data[username]["Feinbucks"]})
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
