@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feinbucks System</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Signup</button>
+
+    <h2>Feinbucks Balance</h2>
+    <p id="balance">Balance: F$0</p>
+    <button onclick="getBalance()">Refresh Balance</button>
+
+    <h2>Notes</h2>
+    <textarea id="notes"></textarea>
+    <button onclick="saveNotes()">Save Notes</button>
+
+    <h2>Gambling</h2>
+    <input type="number" id="bet" placeholder="Bet Amount">
+    <button onclick="gamble()">Gamble</button>
+    <p id="gambleResult"></p>
+
+    <script>
+        let loggedInUser = "";
+
+        function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    loggedInUser = username;
+                    document.getElementById("balance").innerText = "Balance: F$" + data.Feinbucks;
+                    document.getElementById("notes").value = data.Notes;
+                    alert("Login successful!");
+                }
+            });
+        }
+
+        function signup() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            fetch("/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => res.json())
+            .then(data => alert(data.message));
+        }
+
+        function getBalance() {
+            if (!loggedInUser) {
+                alert("Please log in first!");
+                return;
+            }
+
+            fetch(`/balance/${loggedInUser}`)
+            .then(res => res.json())
+            .then(data => document.getElementById("balance").innerText = "Balance: F$" + data.Feinbucks);
+        }
+
+        function saveNotes() {
+            if (!loggedInUser) {
+                alert("Please log in first!");
+                return;
+            }
+
+            let notes = document.getElementById("notes").value;
+            fetch(`/notes/${loggedInUser}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ notes })
+            })
+            .then(res => res.json())
+            .then(data => alert(data.message));
+        }
+
+        function gamble() {
+            if (!loggedInUser) {
+                alert("Please log in first!");
+                return;
+            }
+
+            let bet = document.getElementById("bet").value;
+            fetch(`/gamble/${loggedInUser}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bet })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    document.getElementById("gambleResult").innerText = "You won: F$" + data.winnings;
+                    getBalance();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
