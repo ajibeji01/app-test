@@ -81,3 +81,23 @@ def manage_notes(username):
 def gamble(username):
     data = load_data()
     if username not in data:
+        return jsonify({"error": "User not found"}), 404
+
+    req = request.json
+    bet = float(req.get("bet", 0))
+    feinbucks = float(data[username]["Feinbucks"])
+
+    if feinbucks < bet:
+        return jsonify({"error": "Insufficient Feinbucks"}), 400
+
+    data[username]["Feinbucks"] = str(feinbucks - bet)
+    result = random.choices([0, 1.2, 1.5, 2], weights=[40, 30, 20, 10])[0]
+    winnings = bet * result
+    data[username]["Feinbucks"] = str(float(data[username]["Feinbucks"]) + winnings)
+    save_data(data)
+
+    return jsonify({"result": result, "winnings": winnings, "new_balance": data[username]["Feinbucks"]})
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
